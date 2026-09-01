@@ -5,8 +5,8 @@ const micBtn = document.getElementById('micBtn');
 const attachBtn = document.getElementById('attachBtn');
 const fileInput = document.getElementById('fileInput');
 const cameraInput = document.getElementById('cameraInput');
-const welcomeSection = document.getElementById('welcomeSection');
-const newChatBtn = document.getElementById('newChatBtn');
+const welcomeContainer = document.getElementById('welcomeContainer');
+const upiConfigBtn = document.getElementById('upiConfigBtn');
 
 const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 const previewImg = document.getElementById('previewImg');
@@ -19,34 +19,38 @@ let contacts = JSON.parse(localStorage.getItem('JARVIS_CONTACTS') || '{}');
 let activeImageBase64 = null;
 let torchStream = null;
 
-// Auto-grow Input Box
+// Auto-grow Input Field
 userInput.addEventListener('input', () => {
   userInput.style.height = 'auto';
   userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
 });
 
-// Shortcut helper
-function setPrompt(text) {
-  userInput.value = text;
-  userInput.focus();
-}
+// Suggestion Cards Listener
+document.querySelectorAll('.suggestion-card[data-prompt]').forEach(card => {
+  card.addEventListener('click', () => {
+    const text = card.getAttribute('data-prompt');
+    userInput.value = text;
+    userInput.focus();
+  });
+});
 
-// New Chat Reset
-newChatBtn.addEventListener('click', () => {
-  chatFeed.innerHTML = '';
-  if (welcomeSection) {
-    chatFeed.appendChild(welcomeSection);
-    welcomeSection.style.display = 'flex';
+// Configure UPI ID
+upiConfigBtn.addEventListener('click', () => {
+  const custom = prompt("Set default recipient UPI ID (e.g. name@okhdfcbank):", defaultUpiId);
+  if (custom) {
+    defaultUpiId = custom.trim();
+    localStorage.setItem('JARVIS_UPI', defaultUpiId);
+    alert(`Default UPI ID set to: ${defaultUpiId}`);
   }
 });
 
-// --- CAMERA & PHOTO ATTACHMENT ---
+// --- CAMERA & GALLERY PHOTO ACCESS ---
 function openCameraDirectly() {
   cameraInput.click();
 }
 
 attachBtn.addEventListener('click', () => {
-  const choose = confirm("Tap OK to capture from CAMERA, or Cancel to pick from GALLERY:");
+  const choose = confirm("Tap OK to open CAMERA, or Cancel to choose from GALLERY:");
   if (choose) cameraInput.click();
   else fileInput.click();
 });
@@ -57,7 +61,7 @@ function handleFileProcess(file) {
   reader.onload = () => {
     activeImageBase64 = reader.result;
     previewImg.src = activeImageBase64;
-    imageName.textContent = file.name || "Photo Attachment";
+    imageName.textContent = file.name || "Photo Captured";
     imagePreviewContainer.style.display = 'block';
   };
   reader.readAsDataURL(file);
@@ -90,7 +94,7 @@ function triggerCall(target) {
 
   if (num) {
     window.location.href = `tel:${num}`;
-    return `Initiating cellular call to ${target} (${num}).`;
+    return `Initiating cellular link to ${target} (${num}), Boss.`;
   }
   return `Valid telephone number required for ${target}.`;
 }
@@ -101,13 +105,13 @@ async function toggleTorch(enable) {
       torchStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       const track = torchStream.getVideoTracks()[0];
       await track.applyConstraints({ advanced: [{ torch: true }] });
-      return "Flashlight illuminated.";
+      return "Flashlight illuminated, Boss.";
     } else {
       if (torchStream) {
         torchStream.getTracks().forEach(t => t.stop());
         torchStream = null;
       }
-      return "Flashlight turned off.";
+      return "Flashlight extinguished, Boss.";
     }
   } catch (err) {
     return `Camera hardware permission required for flashlight.`;
@@ -124,7 +128,7 @@ function getLiveLocation() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
-        resolve(`Coordinates locked: Lat ${latitude.toFixed(4)}, Lon ${longitude.toFixed(4)}. Opening Google Maps.`);
+        resolve(`Coordinates locked: Lat ${latitude.toFixed(4)}, Lon ${longitude.toFixed(4)}. Launching Google Maps.`);
       },
       (err) => resolve(`GPS lock failed: ${err.message}`)
     );
@@ -149,22 +153,22 @@ function processPayment(text) {
   }
 
   if (amount) {
-    const upiUri = `upi://pay?pa=${targetUPI}&pn=${encodeURIComponent(targetName)}&am=${amount}&cu=INR&tn=ChatGPT%20Payment`;
+    const upiUri = `upi://pay?pa=${targetUPI}&pn=${encodeURIComponent(targetName)}&am=${amount}&cu=INR&tn=Jarvis%20AI%20Payment`;
     setTimeout(() => { window.location.href = upiUri; }, 350);
-    return `Transferring **₹${amount}** to **${targetUPI}**. Opening UPI apps (GPay / PhonePe / Paytm)...`;
+    return `Payment directive executed: Transferring **₹${amount}** to **${targetUPI}**. Opening UPI apps (Google Pay / PhonePe / Paytm)...`;
   }
 
   if (q.includes("gpay") || q.includes("google pay")) {
     window.location.href = "upi://pay";
-    return "Opening Google Pay.";
+    return "Opening Google Pay selector, Boss.";
   }
   if (q.includes("paytm")) {
     window.location.href = "paytmmp://";
-    return "Opening Paytm.";
+    return "Opening Paytm wallet, Boss.";
   }
   if (q.includes("phonepe")) {
     window.location.href = "phonepe://";
-    return "Opening PhonePe.";
+    return "Opening PhonePe, Boss.";
   }
   return null;
 }
@@ -184,7 +188,7 @@ function solveMath(text) {
       const sanitized = clean.replace(/\^/g, '**');
       const result = Function(`'use strict'; return (${sanitized})`)();
       if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
-        return `**${clean.replace(/\*/g, '×')} = ${result.toLocaleString()}**`;
+        return `Calculation complete, Sir: **${clean.replace(/\*/g, '×')} = ${result.toLocaleString()}**`;
       }
     } catch (e) {
       return null;
@@ -193,13 +197,13 @@ function solveMath(text) {
   return null;
 }
 
-// --- ZERO-KEY GENERATIVE AI ENGINE ---
+// --- ZERO-KEY AUTONOMOUS AI ENGINE ---
 async function fetchAutonomousAI(userPrompt, imageAttached) {
   const promptContext = imageAttached 
-    ? `[Attached Image Scan: Solve the questions or analyze the document in detail]. Question: ${userPrompt || 'Analyze and solve this image step-by-step'}`
+    ? `[Optical Photo Scan Attached: Solve questions or explain document details]. User query: ${userPrompt || 'Analyze and solve this image step-by-step'}`
     : userPrompt;
 
-  const systemPrompt = "You are ChatGPT. Provide well-structured, clear, helpful, and formatted answers using Markdown, lists, and code blocks.";
+  const systemPrompt = "You are Jarvis AI 1.0, Tony Stark's personal intelligent assistant. Address user as Boss or Sir. Format answers cleanly using Markdown, bold headings, lists, and code blocks.";
   const encoded = encodeURIComponent(`${systemPrompt}\n\nUser: ${promptContext}`);
   const url = `https://text.pollinations.ai/${encoded}?model=openai`;
 
@@ -215,7 +219,7 @@ async function fetchAutonomousAI(userPrompt, imageAttached) {
     }
   } catch (e) {}
 
-  return `I have processed your request for: "${userPrompt || 'Image analysis'}".`;
+  return `Directive processed for: "${userPrompt || 'Image analysis'}". All systems ready, Boss.`;
 }
 
 // Master Router
@@ -248,7 +252,7 @@ async function executeDirective(text, hasImage) {
 
   if (q.includes("stock") || q.includes("market") || q.includes("gainers")) {
     window.open("https://www.google.com/finance/markets/gainers", "_blank");
-    return "Opening live stock market metrics.";
+    return "Opening live stock market gainers, Boss.";
   }
 
   return await fetchAutonomousAI(text, hasImage);
@@ -258,10 +262,10 @@ async function executeDirective(text, hasImage) {
 function speakText(text) {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    const clean = text.replace(/[*#`_₹💸📈📱👛📍🔦📸🖼️]/g, '').substring(0, 280);
+    const clean = text.replace(/[*#`_₹💸📈📱👛📍🔦📸🖼️]/g, '').replace(/J\.A\.R\.V\.I\.S:/g, '').substring(0, 280);
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    utterance.pitch = 0.95;
     window.speechSynthesis.speak(utterance);
   }
 }
@@ -303,14 +307,14 @@ micBtn.addEventListener('click', () => {
   else recognition.stop();
 });
 
-// Chat UI Handlers
+// --- UI MESSAGE DISPATCHER ---
 function appendUserMessage(text, imageSrc = null) {
-  if (welcomeSection) welcomeSection.style.display = 'none';
+  if (welcomeContainer) welcomeContainer.style.display = 'none';
 
   const row = document.createElement('div');
-  row.className = 'message-row user';
+  row.className = 'msg-row user';
   
-  let content = `<div class="message-bubble"><p>${escapeHTML(text)}</p>`;
+  let content = `<div class="msg-bubble"><p>${escapeHTML(text)}</p>`;
   if (imageSrc) content += `<img src="${imageSrc}" alt="Uploaded photo" />`;
   content += `</div>`;
 
@@ -319,12 +323,19 @@ function appendUserMessage(text, imageSrc = null) {
   chatFeed.scrollTop = chatFeed.scrollHeight;
 }
 
-function appendAssistantLoading() {
+function appendJarvisLoading() {
   const row = document.createElement('div');
-  row.className = 'message-row assistant';
+  row.className = 'msg-row jarvis';
   row.innerHTML = `
-    <div class="assistant-avatar">GPT</div>
-    <div class="message-bubble"><p>Thinking...</p></div>
+    <svg class="jarvis-avatar gemini-sparkle" viewBox="0 0 24 24">
+      <path fill="url(#sparkle-grad)" d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+    </svg>
+    <div class="msg-bubble">
+      <div class="loading-shimmer">
+        <div class="shimmer-line"></div>
+        <div class="shimmer-line short"></div>
+      </div>
+    </div>
   `;
   chatFeed.appendChild(row);
   chatFeed.scrollTop = chatFeed.scrollHeight;
@@ -343,7 +354,7 @@ async function handleSend() {
 
   if (!text && !attachedImg) return;
 
-  appendUserMessage(text || "Analyze photo", attachedImg);
+  appendUserMessage(text || "Analyze this photo", attachedImg);
   userInput.value = '';
   userInput.style.height = 'auto';
 
@@ -352,10 +363,10 @@ async function handleSend() {
   cameraInput.value = '';
   imagePreviewContainer.style.display = 'none';
 
-  const loadingRow = appendAssistantLoading();
+  const loadingRow = appendJarvisLoading();
   const reply = await executeDirective(text, attachedImg !== null);
 
-  const bubble = loadingRow.querySelector('.message-bubble');
+  const bubble = loadingRow.querySelector('.msg-bubble');
   bubble.innerHTML = (typeof marked !== 'undefined') ? marked.parse(reply) : reply;
 
   const actions = document.createElement('div');
@@ -381,4 +392,3 @@ userInput.addEventListener('keydown', (e) => {
     handleSend();
   }
 });
-      

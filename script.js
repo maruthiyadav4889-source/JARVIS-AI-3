@@ -50,9 +50,21 @@ if (upiConfigBtn) {
   });
 }
 
-// --- 1. OPTICAL CAMERA & GALLERY HANDLERS ---
+// --- 1. OPTICAL CAMERA & GALLERY PROTOCOLS ---
 function openCameraDirectly() {
-  if (cameraInput) cameraInput.click();
+  if (cameraInput) {
+    cameraInput.click();
+    return "Engaging optical sensors. Camera lens initialized, Boss.";
+  }
+  return "Unable to access optical hardware.";
+}
+
+function openGalleryDirectly() {
+  if (fileInput) {
+    fileInput.click();
+    return "Accessing local media gallery, Boss.";
+  }
+  return "Unable to access storage library.";
 }
 
 if (attachBtn) {
@@ -87,7 +99,7 @@ if (removeImageBtn) {
   });
 }
 
-// --- 2. LOCAL DEVICE HOOKS (DATE, TIME, WEATHER, BATTERY) ---
+// --- 2. HARDWARE & APPLICATION LAUNCH PROTOCOLS ---
 
 // Real-Time Date & Time
 function getSystemDateTime() {
@@ -102,7 +114,7 @@ function getSystemDateTime() {
 async function fetchLiveWeather() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      resolve("GPS sensors unavailable. Please allow Location permissions on your device.");
+      resolve("GPS telemetry is unavailable. Please enable location permissions.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -112,20 +124,18 @@ async function fetchLiveWeather() {
           const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
           const data = await res.json();
           const cw = data.current_weather;
-          resolve(`Atmospheric sensors at Lat ${latitude.toFixed(2)}, Lon ${longitude.toFixed(2)}:\n* **Temperature:** ${cw.temperature}°C\n* **Wind Speed:** ${cw.windspeed} km/h\n* **Conditions:** Online and stable, Sir.`);
+          resolve(`Atmospheric sensors at Lat ${latitude.toFixed(2)}, Lon ${longitude.toFixed(2)}:\n* **Temperature:** ${cw.temperature}°C\n* **Wind Speed:** ${cw.windspeed} km/h\n* **Status:** Nominal and stable, Sir.`);
         } catch (e) {
-          resolve("Atmospheric telemetry retrieved: Clear conditions, temperature is nominal.");
+          resolve("Atmospheric sensors active: Current weather conditions are nominal, Sir.");
         }
       },
-      () => {
-        resolve("Location permission denied. Please enable GPS permissions in device settings to fetch live local weather.");
-      },
+      () => resolve("Location permission denied. Please enable GPS in device settings for local weather telemetry."),
       { timeout: 8000 }
     );
   });
 }
 
-// Battery Status
+// Battery Telemetry
 async function getBatteryTelemetry() {
   if ('getBattery' in navigator) {
     try {
@@ -134,7 +144,7 @@ async function getBatteryTelemetry() {
       return `Main power cell is at **${level}%** capacity and **${b.charging ? 'actively charging' : 'operating on internal power'}**, Sir.`;
     } catch (e) {}
   }
-  return "Power cell operating at normal parameters, Sir.";
+  return "Power cell operating within normal parameters, Sir.";
 }
 
 // Flashlight / Rear LED
@@ -157,7 +167,7 @@ async function toggleTorch(enable) {
   }
 }
 
-// Cellular Phone Calling
+// Cellular Calling Protocol
 function triggerCall(target) {
   let num = target.replace(/[^0-9+]/g, '');
   const key = target.toLowerCase().trim();
@@ -176,7 +186,7 @@ function triggerCall(target) {
     window.location.href = `tel:${num}`;
     return `Initiating cellular link to ${target} (${num}), Boss.`;
   }
-  return `Cellular directive aborted. Valid number required for ${target}.`;
+  return `Cellular directive aborted. Valid telephone number required.`;
 }
 
 // Instant UPI Payment
@@ -200,12 +210,12 @@ function processPayment(text) {
   if (amount) {
     const upiUri = `upi://pay?pa=${targetUPI}&pn=${encodeURIComponent(targetName)}&am=${amount}&cu=INR&tn=Jarvis%20AI%20Payment`;
     setTimeout(() => { window.location.href = upiUri; }, 350);
-    return `Payment protocol engaged: Transferring **₹${amount}** to **${targetUPI}**. Opening UPI interface...`;
+    return `Payment directive executed: Transferring **₹${amount}** to **${targetUPI}**. Opening UPI payment apps...`;
   }
 
   if (q.includes("gpay") || q.includes("google pay")) {
     window.location.href = "upi://pay";
-    return "Launching Google Pay selector, Boss.";
+    return "Launching Google Pay interface, Boss.";
   }
   if (q.includes("paytm")) {
     window.location.href = "paytmmp://";
@@ -218,7 +228,7 @@ function processPayment(text) {
   return null;
 }
 
-// Instant Offline Calculator
+// Offline Math Calculator
 function solveMath(text) {
   let clean = text.toLowerCase()
     .replace(/tell|what is|calculate|solve|evaluate|find|value of/gi, '')
@@ -243,15 +253,14 @@ function solveMath(text) {
   return null;
 }
 
-// --- 3. RELIABLE FREE AI REASONING & ASSIGNMENT ENGINE ---
+// --- 3. ZERO-KEY AUTONOMOUS AI ENGINE ---
 async function fetchAutonomousAI(userPrompt, imageAttached) {
   const promptContext = imageAttached 
     ? `[Optical scan attached: Solve the questions, assignments, or extract data from this document/image]. Question: ${userPrompt || 'Analyze and solve step-by-step'}`
     : userPrompt;
 
-  const systemPrompt = "You are Jarvis AI 1.0, Tony Stark's personal AI assistant. Address the user as Boss or Sir. Deliver complete, direct, and well-structured answers using clean Markdown, bold highlights, math formatting, and code blocks.";
+  const systemPrompt = "You are Jarvis AI 1.0, Tony Stark's personal AI assistant. Address user as Boss or Sir. Deliver complete, direct, and well-structured answers using clean Markdown, bold highlights, math formatting, and code blocks.";
 
-  // Tier 1: POST to Pollinations Neural Gateway
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -277,72 +286,92 @@ async function fetchAutonomousAI(userPrompt, imageAttached) {
     }
   } catch (e) {}
 
-  // Tier 2: Direct Wikipedia / Knowledge Gateway fallback
   try {
     const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(userPrompt)}`);
     const wikiData = await wikiRes.json();
     if (wikiData.extract) return wikiData.extract;
   } catch (e) {}
 
-  return `I have processed your query: "${userPrompt}". All neural sub-routines standing by for your next directive, Boss.`;
+  return `Directive processed for: "${userPrompt}". All neural sub-routines standing by, Boss.`;
 }
 
-// --- 4. MASTER PROTOCOL ROUTER ---
+// --- 4. MASTER PROTOCOL ROUTER (Typo-Tolerant & Instant App Intents) ---
 async function executeDirective(text, hasImage) {
   const q = text.toLowerCase().trim();
 
-  // A. Greetings & Identity
-  if (['hai', 'hi', 'hello', 'hey', 'jarvis', 'ok jarvis'].includes(q)) {
-    return "Good day, Boss. All optical, audio, hardware, and payment systems are fully operational. How may I assist you?";
-  }
-  if (q.includes("who are you") || q.includes("your name")) {
-    return "I am **Jarvis AI 1.0**, your autonomous personal assistant. I can solve assignments, process camera scans, manage UPI payments, execute phone calls, and control hardware sensors.";
+  // A. Camera Trigger (Handles "open camara", "take a picture", "open camera")
+  if (q.includes("camara") || q.includes("camera") || q.includes("take photo") || q.includes("take picture") || q.includes("click photo")) {
+    return openCameraDirectly();
   }
 
-  // B. Date & Time
+  // B. Gallery Trigger
+  if (q.includes("gallery") || q.includes("photos") || q.includes("open photos") || q.includes("open gallery")) {
+    return openGalleryDirectly();
+  }
+
+  // C. WhatsApp Trigger (Handles "open my whatsapp", "open whatsapp", "whatsapp")
+  if (q.includes("whatsapp") || q.includes("whatsap") || q.includes("watsapp") || q.includes("watsap")) {
+    setTimeout(() => {
+      window.location.href = "whatsapp://";
+    }, 300);
+    return "Opening WhatsApp messenger, Boss.";
+  }
+
+  // D. YouTube Trigger
+  if (q.includes("youtube") || q.includes("open youtube") || q.includes("play youtube")) {
+    setTimeout(() => {
+      window.open("https://www.youtube.com", "_blank");
+    }, 300);
+    return "Accessing YouTube systems, Boss.";
+  }
+
+  // E. Lock Screen Request
+  if (q.includes("lock my mobile") || q.includes("lock screen") || q.includes("lock phone") || q.includes("screen lock")) {
+    return "Sir, Android security sandboxing prevents web applications from triggering an OS hardware screen lock. Please press your device's physical power button to lock your screen.";
+  }
+
+  // F. Greetings & Identity
+  if (['hai', 'hi', 'hello', 'hey', 'jarvis', 'ok jarvis'].includes(q)) {
+    return "Good day, Boss. All optical sensors, hardware links, and payment protocols are operational. What is your directive?";
+  }
+  if (q.includes("who are you") || q.includes("your name")) {
+    return "I am **Jarvis AI 1.0**, your autonomous assistant. I can open apps, solve assignments, scan photos, execute calls, and process UPI payments.";
+  }
+
+  // G. Date & Time
   if (q.includes("date") || q.includes("today date") || q.includes("what is today") || q.includes("day is today") || q.includes("time") || q.includes("current time")) {
     return getSystemDateTime();
   }
 
-  // C. Weather
+  // H. Weather
   if (q.includes("weather") || q.includes("temperature") || q.includes("climate") || q.includes("rain")) {
     return await fetchLiveWeather();
   }
 
-  // D. Battery Telemetry
+  // I. Battery Status
   if (q.includes("battery") || q.includes("power level") || q.includes("charge")) {
     return await getBatteryTelemetry();
   }
 
-  // E. UPI Payments
+  // J. UPI Payments
   const payOutput = processPayment(text);
   if (payOutput) return payOutput;
 
-  // F. Offline Math
+  // K. Offline Math
   const mathOutput = solveMath(text);
   if (mathOutput && !hasImage) return mathOutput;
 
-  // G. Phone Calls
+  // L. Cellular Calls
   if (q.startsWith("call ") || q.startsWith("dial ")) {
     const target = q.replace("call ", "").replace("dial ", "").replace("to ", "").trim();
     return triggerCall(target);
   }
 
-  // H. Save Contact
-  if (q.startsWith("save contact ") || q.startsWith("save number ")) {
-    const parts = q.replace("save contact ", "").replace("save number ", "").split(" ");
-    if (parts.length >= 2) {
-      contacts[parts[0].toLowerCase()] = parts[1];
-      localStorage.setItem('JARVIS_CONTACTS', JSON.stringify(contacts));
-      return `Contact stored: **${parts[0].toUpperCase()}** (${parts[1]}).`;
-    }
-  }
-
-  // I. Flashlight / Torch
+  // M. Flashlight / Rear LED
   if (q.includes("flashlight on") || q.includes("torch on")) return await toggleTorch(true);
   if (q.includes("flashlight off") || q.includes("torch off")) return await toggleTorch(false);
 
-  // J. Live GPS Navigation
+  // N. GPS Location & Navigation
   if (q.includes("where am i") || q.includes("my location")) {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
@@ -360,13 +389,19 @@ async function executeDirective(text, hasImage) {
     });
   }
 
-  // K. Stock Market
+  if (q.startsWith("navigate to ") || q.startsWith("directions to ")) {
+    const dest = q.replace("navigate to ", "").replace("directions to ", "");
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, "_blank");
+    return `Plotting navigation route to ${dest}, Boss.`;
+  }
+
+  // O. Stock Market
   if (q.includes("stock") || q.includes("market") || q.includes("gainers")) {
     window.open("https://www.google.com/finance/markets/gainers", "_blank");
     return "Accessing real-time equity gainers and market telemetry, Boss.";
   }
 
-  // L. Generative AI Engine (Assignments, Coding, Writing, Photo Analysis)
+  // P. Generative AI Engine (Assignments, Coding, Creative, Image Analysis)
   return await fetchAutonomousAI(text, hasImage);
 }
 
@@ -413,7 +448,7 @@ function stopMic() {
 if (micBtn) {
   micBtn.addEventListener('click', () => {
     if (!recognition) {
-      alert("Microphone requires Chrome on Android.");
+      alert("Microphone requires Google Chrome on Android.");
       return;
     }
     if (!isListening) recognition.start();
@@ -513,5 +548,4 @@ if (userInput) {
       handleSend();
     }
   });
-    }
-    
+}
